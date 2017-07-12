@@ -2,8 +2,9 @@
   "name": "time-tracker",
   "version": "1.0.0",
   "description": "A time tracker app",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
+    "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/slavsan/time-tracker/issues"
   },
-  "homepage": "https://github.com/slavsan/time-tracker#readme"
+  "homepage": "https://github.com/slavsan/time-tracker#readme",
+  "dependencies": {
+    "electron": "^1.6.11"
+  }
 }
