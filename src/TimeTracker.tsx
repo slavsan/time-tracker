@@ -1,31 +1,18 @@
 import * as React from 'react';
-import { FormEvent } from 'react';
-import { Form, FormControl } from 'react-bootstrap';
-import { v4 as uuid } from 'uuid';
-import TasksList from './components/TasksList';
-import Task from './types/task';
+import Navigation from './components/Navigation';
+import Pages from './components/Pages';
+import ActivitiesPage from './components/ActivitiesPage';
+import HistoryPage from './components/HistoryPage';
+import StatsPage from './components/StatsPage';
+import SettingsPage from './components/SettingsPage';
 import './bootstrap/css/bootstrap.min.css';
 import './bootstrap/css/bootstrap-theme.min.css';
 import './TimeTracker.css';
 
 type Props = {};
 type State = {
-  tasks: Array<Task>,
-  filterValue: string
+  activeTab: number
 };
-
-interface MyEventTarget extends EventTarget {
-  value: string;
-}
-
-interface MyFormEvent<T> extends React.FormEvent<T> {
-  target: MyEventTarget;
-}
-
-const defaultTasks = [
-  {id: '1', name: 'Task 1'},
-  {id: '2', name: 'Task 2'}
-];
 
 class TimeTracker extends React.Component<{}, {}> {
   state: State;
@@ -33,47 +20,42 @@ class TimeTracker extends React.Component<{}, {}> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      tasks: defaultTasks,
-      filterValue: ''
+      activeTab: 1
     };
 
-    this.onChangeFilterValue = this.onChangeFilterValue.bind(this);
-    this.addTask = this.addTask.bind(this);
+    this.setActiveTab = this.setActiveTab.bind(this);
   }
 
-  addTask(e: FormEvent<Form>) {
-    e.preventDefault();
-    const name = this.state.filterValue;
-    if (name === '') {
-      return;
-    }
-    if (this.state.tasks.filter(t => t.name === name).length) {
-      return;
-    }
-    const tasks = this.state.tasks;
-    tasks.push({
-      id: uuid(),
-      name: name
-    });
-    this.setState({filterValue: '', tasks});
+  setActiveTab(activeTab: number) {
+    this.setState({activeTab});
   }
 
-  onChangeFilterValue(value: string) {
-    this.setState({filterValue: value});
+  renderPages() {
+    if (this.state.activeTab === 1) {
+      return <ActivitiesPage />;
+    }
+
+    if (this.state.activeTab === 2) {
+      return <HistoryPage />;
+    }
+
+    if (this.state.activeTab === 2) {
+      return <StatsPage />;
+    }
+
+    return <SettingsPage />;
   }
 
   render() {
     return (
       <div id="main">
-        <Form onSubmit={this.addTask}>
-          <FormControl
-            type="text"
-            placeholder="Add or search for a task.."
-            value={this.state.filterValue}
-            onChange={(e: MyFormEvent<FormControl>) => this.onChangeFilterValue(e.target.value)}
-          />
-        </Form>
-        <TasksList tasks={this.state.tasks} />
+        <Navigation
+          activeTab={this.state.activeTab}
+          onChangeTab={(activeTab: number) => this.setActiveTab(activeTab)}
+        />
+        <Pages>
+          {this.renderPages()}
+        </Pages>
       </div>
     );
   }
