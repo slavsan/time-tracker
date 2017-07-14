@@ -1,0 +1,11 @@
+.TasksList {
+    margin-top: 20px;
+}
+
+.TasksList .list-group-item {
+    display: flex;
+}
+
+.list-group-item > span {
+    flex: 1;
+}
