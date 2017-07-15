@@ -5,7 +5,10 @@ import TaskComponent from './TaskComponent';
 import './TasksList.css';
 
 type Props = {
-  tasks: Array<Task>
+  tasks: Array<Task>,
+  startTask: Function,
+  pauseTask: Function,
+  activeTask: string
 };
 
 class TasksList extends React.Component<{}, {}> {
@@ -22,7 +25,9 @@ class TasksList extends React.Component<{}, {}> {
           <TaskComponent
             key={task.id}
             task={task}
-            onClickPlay={(t: Task) => console.log('clicked play for task', t.name)}
+            active={task.id === this.props.activeTask}
+            onClickPlay={(t: Task) => this.props.startTask(t)}
+            onClickPause={(t: Task) => this.props.pauseTask(t)}
           />
         )}
       </ListGroup>
