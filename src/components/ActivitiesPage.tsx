@@ -6,6 +6,9 @@ import Task from '../types/task';
 import Activity from '../types/activity';
 import { FormEvent } from 'react';
 import MyFormEvent from '../types/MyFormEvent';
+import TimeSpentCalculator from '../lib/TimeSpentCalculator';
+import 'moment-duration-format';
+import './ActivitiesPage.css';
 
 type Props = {
   tasks: Array<Task>,
@@ -15,8 +18,7 @@ type Props = {
   pauseTask: Function
 };
 type State = {
-  filterValue: string,
-  interval?: any
+  filterValue: string
 };
 
 class ActivitiesPage extends React.Component<{}, {}> {
@@ -55,8 +57,10 @@ class ActivitiesPage extends React.Component<{}, {}> {
   }
 
   render() {
+    const totalTimeSPent = TimeSpentCalculator.getTimeSpentForAllActivities(this.props.activities);
+
     return (
-      <div>
+      <div className="ActivitiesPage">
         <Form onSubmit={this.addTask}>
           <FormControl
             type="text"
@@ -71,6 +75,9 @@ class ActivitiesPage extends React.Component<{}, {}> {
           startTask={this.props.startTask}
           pauseTask={this.props.pauseTask}
         />
+        <div className="total">
+          {totalTimeSPent.format('HH:mm:ss', {trim: false})}
+        </div>
       </div>
     );
   }

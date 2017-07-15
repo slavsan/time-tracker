@@ -107,7 +107,7 @@ class TimeTracker extends React.Component<{}, {}> {
   getCurrentActivity(): Activity {
     const ongoingActivities = this.state.activities.filter(a => !a.endDate);
     if (ongoingActivities.length > 1) {
-      console.error('more than one ongoing activities');
+      throw new Error('more than one ongoing activities');
     }
     return ongoingActivities[0];
   }
