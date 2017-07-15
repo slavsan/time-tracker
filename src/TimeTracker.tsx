@@ -1,6 +1,5 @@
 import * as React from 'react';
 import * as moment from 'moment';
-import { Duration } from 'moment/moment';
 import { v4 as uuid } from 'uuid';
 import Task from './types/task';
 import Activity from './types/activity';
@@ -10,6 +9,7 @@ import ActivitiesPage from './components/ActivitiesPage';
 import HistoryPage from './components/HistoryPage';
 import StatsPage from './components/StatsPage';
 import SettingsPage from './components/SettingsPage';
+import TimeSpentCalculator from './lib/TimeSpentCalculator';
 import './bootstrap/css/bootstrap.min.css';
 import './bootstrap/css/bootstrap-theme.min.css';
 import './TimeTracker.css';
@@ -67,16 +67,6 @@ class TimeTracker extends React.Component<{}, {}> {
               this.setState({interval});
             }
           );
-          // - this activity should have no end date so it should be considered
-          //   the current/ongoing activity
-          // - all the other activities for a task should have their times already
-          //   calculated so that we don't parse the time spent for each of them
-          //   continuously
-          // - all the seconds should be calculated and displayed in a formatted way
-          //   after each second
-          // - there should be a chronological list of activities for today which
-          //   should show how much time was spent for each activity
-          // - there should be a summary of all time spent for all tasks
         }
       );
     });
@@ -84,7 +74,6 @@ class TimeTracker extends React.Component<{}, {}> {
 
   getTaskActivities(task: Task) {
     const activities = this.state.activities.filter(a => a.taskId === task.id);
-    console.log('search activities for: %s, count is %o', task.id, activities.length);
     return activities;
   }
 
@@ -111,55 +100,8 @@ class TimeTracker extends React.Component<{}, {}> {
 
   trackActivity() {
     const activeTask = this.getActiveTask();
-    activeTask.timeSpent = this.getTimeSpent(activeTask);
+    activeTask.timeSpent = TimeSpentCalculator.getTimeSpentForAllActivities(this.getTaskActivities(activeTask));
     this.setState({tasks: this.state.tasks});
-  }
-
-  getTimeSpent(task: Task): Duration {
-    const taskActivities = this.getTaskActivities(task);
-    // console.log('task activities %s: %o', JSON.stringify(task), taskActivities);
-
-    const start = moment();
-    const end = moment();
-    let totalTimeSpent: Duration = moment.duration(end.diff(start));
-
-    taskActivities.forEach(activity => {
-      if (activity.timeSpent) {
-        // console.log('time spent is available');
-        if (totalTimeSpent) {
-          totalTimeSpent.add(activity.timeSpent);
-          return;
-        }
-        totalTimeSpent = activity.timeSpent;
-        return;
-      }
-      if (activity.beginDate && activity.endDate) {
-        // console.log('begin date AND end date');
-        const start = moment(activity.beginDate);
-        const end = moment(activity.endDate);
-        const timeSpent = moment.duration(end.diff(start));
-        if (totalTimeSpent) {
-          totalTimeSpent.add(timeSpent);
-          return;
-        }
-        totalTimeSpent = timeSpent;
-        return;
-      }
-      if (activity.beginDate && !activity.endDate) {
-        // console.log('only begin date');
-        const start = moment(activity.beginDate);
-        const end = moment();
-        const timeSpent = moment.duration(end.diff(start));
-        if (totalTimeSpent) {
-          totalTimeSpent.add(timeSpent);
-          return;
-        }
-        totalTimeSpent = timeSpent;
-        return;
-      }
-    });
-
-    return totalTimeSpent;
   }
 
   getCurrentActivity(): Activity {
@@ -167,7 +109,6 @@ class TimeTracker extends React.Component<{}, {}> {
     if (ongoingActivities.length > 1) {
       console.error('more than one ongoing activities');
     }
-    console.log('ongoing activities', ongoingActivities);
     return ongoingActivities[0];
   }
 
@@ -189,7 +130,12 @@ class TimeTracker extends React.Component<{}, {}> {
     }
 
     if (this.state.activeTab === 2) {
-      return <HistoryPage />;
+      return (
+        <HistoryPage
+          activities={this.state.activities}
+          tasks={this.state.tasks}
+        />
+      );
     }
 
     if (this.state.activeTab === 2) {

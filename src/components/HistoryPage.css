@@ -1,0 +1,15 @@
+.HistoryPage {
+    text-align: center;
+}
+
+.HistoryPage .header {
+    font-weight: bold;
+}
+
+.HistoryPage .row .row > div {
+    padding: 10px 0;
+}
+
+.HistoryPage .row.header > div {
+    padding: 0;
+}
