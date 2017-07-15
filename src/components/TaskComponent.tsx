@@ -15,7 +15,7 @@ function TaskComponent({task, active, onClickPlay, onClickPause}: Props) {
   const classes = classNames('list-group-item', {active});
 
   const playPauseButton = active ? (
-    <Button bsSize="xs" onClick={(e) => onClickPause(task)}>
+    <Button bsSize="xs" onClick={(e) => onClickPause()}>
       <Glyphicon glyph="pause" />
     </Button>
   ) : (

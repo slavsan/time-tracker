@@ -27,7 +27,7 @@ class TasksList extends React.Component<{}, {}> {
             task={task}
             active={task.id === this.props.activeTask}
             onClickPlay={(t: Task) => this.props.startTask(t)}
-            onClickPause={(t: Task) => this.props.pauseTask(t)}
+            onClickPause={() => this.props.pauseTask()}
           />
         )}
       </ListGroup>

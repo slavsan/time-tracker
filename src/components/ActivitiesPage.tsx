@@ -6,6 +6,7 @@ import Task from '../types/task';
 import Activity from '../types/activity';
 import { FormEvent } from 'react';
 import * as moment from 'moment';
+import { Duration } from "moment/moment";
 
 type Props = {};
 type State = {
@@ -13,7 +14,7 @@ type State = {
   activities: Array<Activity>,
   filterValue: string,
   activeTask: '',
-  timeout?: any
+  interval?: any
 };
 
 interface MyEventTarget extends EventTarget {
@@ -50,56 +51,112 @@ class ActivitiesPage extends React.Component<{}, {}> {
   }
 
   startTask(task: Task) {
-    clearTimeout(this.state.timeout);
-    this.setState(
-      {activeTask: task.id, timeout: null},
-      () => {
-        const activity: Activity = {
-          id: uuid(),
-          taskId: task.id,
-          beginDate: moment().toString()
-        };
-        const activities = this.state.activities;
-        activities.push(activity);
-        this.setState({activities});
-        this.trackActivity(activity);
-        // - this activity should have no end date so it should be considered
-        //   the current/ongoing activity
-        // - all the other activities for a task should have their times already
-        //   calculated so that we don't parse the time spent for each of them
-        //   continuously
-        // - all the seconds should be calculated and displayed in a formatted way
-        //   after each second
-        // - there should be a chronological list of activities for today which
-        //   should show how much time was spent for each activity
-        // - ...
-      });
+    clearInterval(this.state.interval);
+    this.pauseTask(() => {
+      this.setState(
+        {activeTask: task.id, interval: null},
+        () => {
+          const activity: Activity = {
+            id: uuid(),
+            taskId: task.id,
+            beginDate: moment().toString()
+          };
+          const activities = this.state.activities;
+          activities.push(activity);
+          this.setState(
+            {activities: activities},
+            () => {
+              const interval = setInterval(() => {
+                this.trackActivity();
+              }, 1000);
+              this.setState({interval});
+            }
+          );
+          // - this activity should have no end date so it should be considered
+          //   the current/ongoing activity
+          // - all the other activities for a task should have their times already
+          //   calculated so that we don't parse the time spent for each of them
+          //   continuously
+          // - all the seconds should be calculated and displayed in a formatted way
+          //   after each second
+          // - there should be a chronological list of activities for today which
+          //   should show how much time was spent for each activity
+          // - there should be a summary of all time spent for all tasks
+        }
+      );
+    });
   }
 
-  pauseTask(task: Task) {
+  pauseTask(cb: Function) {
     const activity = this.getCurrentActivity();
+    if (!activity) {
+      if (cb) return cb();
+    }
     activity.endDate = moment().toString();
     const activities = this.state.activities;
-    clearTimeout(this.state.timeout);
-    this.setState({activeTask: '', timeout: null, activities});
+    clearInterval(this.state.interval);
+    this.setState({activeTask: '', interval: null, activities}, () => {
+      if (cb) cb()
+    });
   }
 
-  trackActivity(activity: Activity) {
-    const start = moment(activity.beginDate);
+  getTaskActivities(task: Task) {
+    const activities = this.state.activities.filter(a => a.taskId === task.id);
+    console.log('search activities for: %s, count is %o', task.id, activities.length);
+    return activities;
+  }
+
+  getTimeSpent(task: Task): Duration {
+    const taskActivities = this.getTaskActivities(task);
+    // console.log('task activities %s: %o', JSON.stringify(task), taskActivities);
+
+    const start = moment();
     const end = moment();
-    const elapsed = moment.duration(end.diff(start));
+    let totalTimeSpent: Duration = moment.duration(end.diff(start));
+
+    taskActivities.forEach(activity => {
+      if (activity.timeSpent) {
+        // console.log('time spent is available');
+        if (totalTimeSpent) {
+          totalTimeSpent.add(activity.timeSpent);
+          return
+        }
+        totalTimeSpent = activity.timeSpent;
+        return
+      }
+      if (activity.beginDate && activity.endDate) {
+        // console.log('begin date AND end date');
+        const start = moment(activity.beginDate);
+        const end = moment(activity.endDate);
+        const timeSpent = moment.duration(end.diff(start));
+        if (totalTimeSpent) {
+          totalTimeSpent.add(timeSpent);
+          return
+        }
+        totalTimeSpent = timeSpent;
+        return
+      }
+      if (activity.beginDate && !activity.endDate) {
+        // console.log('only begin date');
+        const start = moment(activity.beginDate);
+        const end = moment();
+        const timeSpent = moment.duration(end.diff(start));
+        if (totalTimeSpent) {
+          totalTimeSpent.add(timeSpent);
+          return
+        }
+        totalTimeSpent = timeSpent;
+        return
+      }
+    });
+
+    return totalTimeSpent
+  }
+
+  trackActivity() {
     const activeTask = this.getActiveTask();
-
-    activeTask.timeSpent = elapsed;
-
+    activeTask.timeSpent = this.getTimeSpent(activeTask);
     this.setState({tasks: this.state.tasks});
-
-    this.state.timeout = global.setTimeout(
-      () => {
-        this.trackActivity(activity);
-      },
-      1000
-    );
   }
 
   getActiveTask(): Task {
